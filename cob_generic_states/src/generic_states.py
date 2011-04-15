@@ -211,7 +211,7 @@ class message(smach.State):
 
 		smach.State.__init__(
 			self,
-			outcomes=['sent_succes', 'sent_fail'],
+			outcomes=['sent_succes', 'sent_failed'],
 			input_keys=['message'],
 			output_keys=['message'])
 
