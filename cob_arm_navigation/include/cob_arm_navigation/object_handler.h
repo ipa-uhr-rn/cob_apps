@@ -515,14 +515,17 @@ private:
 
 		//ToDo: figure out how *.model-size and *.urdf-extend are related
 		//ToDo: figure out where the *.model origin is located (top,center,bottom?)
+		
+		//it seems to be correct for the milk_box now
+		//is the position of the model origin consistent with the other models?
 		collision_object.shapes[0].type = geometric_shapes_msgs::Shape::BOX;
-		collision_object.shapes[0].dimensions.push_back(dimensions[0]/2.0);
-		collision_object.shapes[0].dimensions.push_back(dimensions[1]/2.0);
-		collision_object.shapes[0].dimensions.push_back(dimensions[2]/2.0);
+		collision_object.shapes[0].dimensions.push_back(dimensions[0]);
+		collision_object.shapes[0].dimensions.push_back(dimensions[1]);
+		collision_object.shapes[0].dimensions.push_back(dimensions[2]);
 
-		collision_object.poses[0].position.x = state_srv.response.pose.position.x;
-		collision_object.poses[0].position.y = state_srv.response.pose.position.y;
-		collision_object.poses[0].position.z = state_srv.response.pose.position.z;
+		collision_object.poses[0].position.x = state_srv.response.pose.position.x;//+(dimensions[0]/2.0);
+		collision_object.poses[0].position.y = state_srv.response.pose.position.y;//+(dimensions[1]/2.0);
+		collision_object.poses[0].position.z = state_srv.response.pose.position.z+(dimensions[2]/2.0);
 		collision_object.poses[0].orientation.x = state_srv.response.pose.orientation.x;
 		collision_object.poses[0].orientation.y = state_srv.response.pose.orientation.y;
 		collision_object.poses[0].orientation.z = state_srv.response.pose.orientation.z;
