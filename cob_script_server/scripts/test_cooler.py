@@ -77,7 +77,8 @@ class GraspScript(script):
 		if(not self.sss.parse): 
 			self.listener = tf.TransformListener()
 			time.sleep(0.5)
-			startposition = [0.32801351164082243, -1.2319244977553321, -0.020446793812738041, 1.7740684566996034, 0.44454129082455984, 1.5863009631773928, 0.66069169492063817]
+			#startposition = [0.32801351164082243, -1.2319244977553321, -0.020446793812738041, 1.7740684566996034, 0.44454129082455984, 1.5863009631773928, 0.66069169492063817]
+			startposition = [0.32801351164082243, -1.2319244977553321, -0.020446793812738041, 1.7740684566996034, 0.44454129082455984, 1.5863009631773928, -0.910104632]
 
 			#calculating ik's
 			(grasp_empty_cup_position, error_code) = self.calcRelIK(startposition, [-0.1,0.0,0.0])		
@@ -85,16 +86,78 @@ class GraspScript(script):
 				print grasp_empty_cup_position
 			else:
 				print "Ik 1 Failed"
-			(grasp_cup_out_of_cooler_position, error_code) = self.calcRelIK(grasp_empty_cup_position, [0.1,0.0,0,1])		
+			(grasp_cup_out_of_cooler_position, error_code) = self.calcRelIK(grasp_empty_cup_position, [0.1,0.0,0.1])		
 			if(error_code.val == error_code.SUCCESS):
 				print grasp_empty_cup_position
 			else:
 				print "Ik 2 Failed"
+			(move_in, error_code) = self.calcRelIK(startposition, [-0.1,0.0,0.0])		
+			if(error_code.val == error_code.SUCCESS):
+				print move_in
+			else:
+				print "Ik 3 Failed"
+			(move_down, error_code) = self.calcRelIK(move_in, [0.0,0.0,-0.05])		
+			if(error_code.val == error_code.SUCCESS):
+				print move_down
+			else:
+				print "Ik 4 Failed"
+			(lift_cup, error_code) = self.calcRelIK(move_down, [0.0,0.0,0.05])		
+			if(error_code.val == error_code.SUCCESS):
+				print lift_cup
+			else:
+				print "Ik 5 Failed"		
+			(pull_out, error_code) = self.calcRelIK(lift_cup, [0.0,0.0,0.0], [0.3,0.0,0.0])		
+			if(error_code.val == error_code.SUCCESS):
+				print pull_out
+			else:
+				print "Ik 6 Failed"
+			(move_out, error_code) = self.calcRelIK(pull_out, [0.02,0.0,0.04], [0.0,0.0,0.0])		
+			if(error_code.val == error_code.SUCCESS):
+				print move_out
+			else:
+				print "Ik 7 Failed"
+			(upright_cup, error_code) = self.calcRelIK(move_out, [0.0,0.0,0.0], [-0.3,0.0,0.0])		
+			if(error_code.val == error_code.SUCCESS):
+				print upright_cup
+			else:
+				print "Ik 8 Failed"				
+			(rotate_cup, error_code) = self.calcRelIK(upright_cup, [0.0,0.0,0.0], [0.0,0.0,-3.1])		
+			if(error_code.val == error_code.SUCCESS):
+				print rotate_cup
+			else:
+				print "Ik 9 Failed"								
 
 			self.sss.move("arm", [startposition])
-			self.sss.move("sdh", [[0.0,1.0472,0.0,0.0,1.0472,0.0,1.0472]])
-			self.sss.move("arm", [grasp_empty_cup_position])
-			self.sss.move("arm", [grasp_cup_out_of_cooler_position])
+			###open hand
+			#self.sss.move("sdh", [[0.0,1.0472,0.0,0.0,1.0472,0.0,1.0472]])
+			self.sss.move("sdh", [[-1.4,0.0,1.5,-0.3,0.3,-0.3,0.3]])
+			###move in - above cup
+			self.sss.move("arm", [move_in])
+			###move down - around cup
+			self.sss.move("arm", [move_down])
+			###close hand - grasp cup
+			self.sss.move("sdh", [[-1.4,0.0,1.5,-0.2,0.4,-0.2,0.4]])
+			###lift cup
+			self.sss.move("arm", [lift_cup])
+			###pull out - rotation
+			self.sss.move("arm", [pull_out])
+			###move out
+			self.sss.move("arm", [move_out])
+			###upright cup
+			self.sss.move("arm", [upright_cup])			
+			###rotate cup
+			self.sss.move("arm", [rotate_cup])
+			###place under valve...
+			
+			
+			
+			
+			#self.sss.move("arm", [grasp_empty_cup_position])
+			#self.sss.move("arm", [grasp_cup_out_of_cooler_position])
+				
+				
+				
+				
 				
 			#self.sss.move("arm", grasp_empty_cup_position
 			#self.sss.move_cart_rel("arm",[[0.0, 0.0, 0.0], [0, 0, 0]])
