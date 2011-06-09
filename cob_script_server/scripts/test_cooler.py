@@ -43,11 +43,11 @@ class GraspScript(script):
 	def Initialize(self):
 		self.init_ik_interface()
 		# initialize components (not needed for simulation)
-		#self.sss.init("tray")
-		#self.sss.init("torso")
-		#self.sss.init("arm")
-		#self.sss.init("sdh")
-		#self.sss.init("base")
+		self.sss.init("tray")
+		self.sss.init("torso")
+		self.sss.init("arm")
+		self.sss.init("sdh")
+		self.sss.init("base")
 
 	def calcRelIK(self, start, goalpose, goalrotation = [0,0,0]):
 		result = []
@@ -78,7 +78,7 @@ class GraspScript(script):
 			self.listener = tf.TransformListener()
 			time.sleep(0.5)
 			#startposition = [0.32801351164082243, -1.2319244977553321, -0.020446793812738041, 1.7740684566996034, 0.44454129082455984, 1.5863009631773928, 0.66069169492063817]
-			startposition = [0.32801351164082243, -1.2319244977553321, -0.020446793812738041, 1.7740684566996034, 0.44454129082455984, 1.5863009631773928, -0.910104632]
+			startposition = [0.32801351164082243, -1.2319244977553321, -0.020446793812738041, 1.7740684566996034, 0.44454129082455984, 1.5863009631773928, -0.88510463237762715]
 
 			#calculating ik's
 			(grasp_empty_cup_position, error_code) = self.calcRelIK(startposition, [-0.1,0.0,0.0])		
@@ -91,62 +91,121 @@ class GraspScript(script):
 				print grasp_empty_cup_position
 			else:
 				print "Ik 2 Failed"
-			(move_in, error_code) = self.calcRelIK(startposition, [-0.1,0.0,0.0])		
+			(move_in, error_code) = self.calcRelIK(startposition, [-0.18,0.0,0.02])		
 			if(error_code.val == error_code.SUCCESS):
 				print move_in
 			else:
 				print "Ik 3 Failed"
-			(move_down, error_code) = self.calcRelIK(move_in, [0.0,0.0,-0.05])		
-			if(error_code.val == error_code.SUCCESS):
-				print move_down
-			else:
-				print "Ik 4 Failed"
-			(lift_cup, error_code) = self.calcRelIK(move_down, [0.0,0.0,0.05])		
+			(lift_cup, error_code) = self.calcRelIK(move_in, [0.0,0.0,0.03])		
 			if(error_code.val == error_code.SUCCESS):
 				print lift_cup
 			else:
-				print "Ik 5 Failed"		
-			(pull_out, error_code) = self.calcRelIK(lift_cup, [0.0,0.0,0.0], [0.3,0.0,0.0])		
+				print "Ik 4 Failed"		
+			(pull_out, error_code) = self.calcRelIK(lift_cup, [0.05,0.0,-0.03], [0.25,0.0,0.0])		
 			if(error_code.val == error_code.SUCCESS):
 				print pull_out
 			else:
-				print "Ik 6 Failed"
-			(move_out, error_code) = self.calcRelIK(pull_out, [0.02,0.0,0.04], [0.0,0.0,0.0])		
+				print "Ik 5 Failed"
+			(move_out, error_code) = self.calcRelIK(pull_out, [0.05,0.0,0.10])		
 			if(error_code.val == error_code.SUCCESS):
 				print move_out
 			else:
-				print "Ik 7 Failed"
-			(upright_cup, error_code) = self.calcRelIK(move_out, [0.0,0.0,0.0], [-0.3,0.0,0.0])		
-			if(error_code.val == error_code.SUCCESS):
-				print upright_cup
-			else:
-				print "Ik 8 Failed"				
-			(rotate_cup, error_code) = self.calcRelIK(upright_cup, [0.0,0.0,0.0], [0.0,0.0,-3.1])		
+				print "Ik 6 Failed"			
+			(rotate_cup, error_code) = self.calcRelIK(startposition, [0.0,0.0,0.0], [0.0,0.0,-3.1])		
 			if(error_code.val == error_code.SUCCESS):
 				print rotate_cup
 			else:
-				print "Ik 9 Failed"								
+				print "Ik 7 Failed"
+			(push_cup_v1, error_code) = self.calcRelIK(startposition, [-0.14,0.0,0.02])		
+			if(error_code.val == error_code.SUCCESS):
+				print push_cup_v1
+			else:
+				print "Ik 8 Failed"
+			(push_cup_v2, error_code) = self.calcRelIK(startposition, [-0.15,0.0,0.06], [0.1,0.0,0.0])		
+			if(error_code.val == error_code.SUCCESS):
+				print push_cup_v2
+			else:
+				print "Ik 9 Failed"
+			(push_cup_v2_down, error_code) = self.calcRelIK(push_cup_v2, [-0.015,0.0,-0.09])		
+			if(error_code.val == error_code.SUCCESS):
+				print push_cup_v2_down
+			else:
+				print "Ik 10 Failed"											
 
-			self.sss.move("arm", [startposition])
-			###open hand
-			#self.sss.move("sdh", [[0.0,1.0472,0.0,0.0,1.0472,0.0,1.0472]])
-			self.sss.move("sdh", [[-1.4,0.0,1.5,-0.3,0.3,-0.3,0.3]])
-			###move in - above cup
-			self.sss.move("arm", [move_in])
-			###move down - around cup
-			self.sss.move("arm", [move_down])
-			###close hand - grasp cup
-			self.sss.move("sdh", [[-1.4,0.0,1.5,-0.2,0.4,-0.2,0.4]])
-			###lift cup
-			self.sss.move("arm", [lift_cup])
-			###pull out - rotation
-			self.sss.move("arm", [pull_out])
-			###move out
-			self.sss.move("arm", [move_out])
-			###upright cup
-			self.sss.move("arm", [upright_cup])			
-			###rotate cup
-			self.sss.move("arm", [rotate_cup])
+
+			self.sss.sleep(3.0)
+			print "Starting in 3 ..."
+
+			###init
+			#startpos
+			handle01 = self.sss.move("arm", [startposition])
+			handle01.wait()
+			self.sss.sleep(3.0)
+			#open hand
+			self.sss.move("sdh", [[-1.4,0.0,1.55,-0.25,0.3,-0.25,0.3]])
+			self.sss.sleep(3.0)
+
+
+			###bring cups in good position
+			#close hand
+			self.sss.move("sdh", [[-1.4,0.0,1.56,0.0,0.3,0.0,0.3]])
+			self.sss.sleep(3.0)
+			#push cup - Variante 1
+			#handle02 = self.sss.move("arm", [push_cup_v1])
+			#handle02.wait()
+			#self.sss.sleep(3.0)
+			#push cup - Variante 2
+			handle02 = self.sss.move("arm", [push_cup_v2])
+			handle02.wait()
+			self.sss.sleep(3.0)
+			handle02a = self.sss.move("arm", [push_cup_v2_down])
+			handle02a.wait()
+			self.sss.sleep(3.0)
+			handle02b = self.sss.move("arm", [push_cup_v2])
+			handle02b.wait()
+			self.sss.sleep(3.0)
+
+
+
+
+			###get cup
+			#startpos
+			handle03 = self.sss.move("arm", [startposition])
+			handle03.wait()
+			self.sss.sleep(3.0)
+			#open hand
+			self.sss.move("sdh", [[-1.4,0.0,1.55,-0.25,0.3,-0.25,0.3]])
+			self.sss.sleep(3.0)
+			#move in - above cup
+			handle04 = self.sss.move("arm", [move_in])
+			handle04.wait()
+			self.sss.sleep(3.0)
+			#close hand - grasp cup
+			self.sss.move("sdh", [[-1.4,0.0,1.56,-0.08,0.3,-0.08,0.3]])
+			self.sss.sleep(3.0)
+			#lift cup
+			handle05 = self.sss.move("arm", [lift_cup])
+			handle05.wait()
+			self.sss.sleep(3.0)
+			#pull out - rotation
+			handle06 = self.sss.move("arm", [pull_out])
+			handle06.wait()
+			self.sss.sleep(3.0)
+			#move out
+			handle07 = self.sss.move("arm", [move_out])
+			handle07.wait()
+			self.sss.sleep(3.0)
+			#upright cup
+			handle08 = self.sss.move("arm", [startposition])
+			handle08.wait()
+			self.sss.sleep(3.0)			
+			#rotate cup
+			handle09 = self.sss.move("arm", [rotate_cup])
+			handle09.wait()
+			self.sss.sleep(3.0)
+
+
+
 			###place under valve...
 			
 			
