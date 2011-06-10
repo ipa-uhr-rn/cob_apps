@@ -83,13 +83,13 @@ from actionlib_msgs.msg import *
 #------------------------------------------------------------------------------------------#
 #-----	SMACH STATES				-------------------------------------------------------#
 
-class initialize(smach.State):
+class initiate(smach.State):
 
 	def __init__(self):
 
 		smach.State.__init__(
 			self,
-			outcomes=['initialized', 'failed'],
+			outcomes=['initiated', 'failed'],
 			input_keys=['listener', 'message'],
 			output_keys=['listener', 'message'])
 		
@@ -118,10 +118,14 @@ class initialize(smach.State):
 
 		handle_torso = sss.init("torso")
 		if handle_torso.get_error_code() != 0:
+			userdata.task_outcome_String = 'failed'
+			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 			
 		handle_tray = sss.init("tray")
 		if handle_tray.get_error_code() != 0:
+			userdata.task_outcome_String = 'failed'
+			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 		#handle_arm = sss.init("arm")
@@ -134,6 +138,8 @@ class initialize(smach.State):
 
 		handle_base = sss.init("base")
 		if handle_base.get_error_code() != 0:
+			userdata.task_outcome_String = 'failed'
+			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'		
 		
 		######################
@@ -146,10 +152,14 @@ class initialize(smach.State):
 		
 		handle_torso = sss.recover("torso")
 		if handle_torso.get_error_code() != 0:
+			userdata.task_outcome_String = 'failed'
+			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 		
 		handle_tray = sss.recover("tray")
 		if handle_tray.get_error_code() != 0:
+			userdata.task_outcome_String = 'failed'
+			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 		#handle_arm = sss.recover("arm")
@@ -162,6 +172,8 @@ class initialize(smach.State):
 
 		handle_base = sss.recover("base")
 		if handle_base.get_error_code() != 0:
+			userdata.task_outcome_String = 'failed'
+			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 		# set light
@@ -205,6 +217,8 @@ class interrupt(smach.State):
 			userdata.message = []
 			userdata.message.append(4)
 			userdata.message.append("Task has been interrupted")
+			userdata.task_outcome_String = 'canceled'
+			userdata.task_outcome_Message = 'Aufgabe wurde zugunsten einer höher priorisierten Aufgabe abgebrochen'
 			return 'interrupted'
 
 #------------------------------------------------------------------------------------------#
@@ -265,6 +279,8 @@ class approach_pose(smach.State):
 			except rospy.ROSException, e:
 				error_message = "%s"%e
 				rospy.logerr("<<%s>> service not available, error: %s",service_full_name, error_message)
+				userdata.task_outcome_String = 'failed'
+                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# check if service is callable
@@ -274,6 +290,8 @@ class approach_pose(smach.State):
 			except rospy.ServiceException, e:
 				error_message = "%s"%e
 				rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
+				userdata.task_outcome_String = 'failed'
+                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# evaluate sevice response
@@ -346,6 +364,8 @@ class approach_pose_without_retry(smach.State):
 			except rospy.ROSException, e:
 				error_message = "%s"%e
 				rospy.logerr("<<%s>> service not available, error: %s",service_full_name, error_message)
+				userdata.task_outcome_String = 'failed'
+                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# check if service is callable
@@ -355,6 +375,8 @@ class approach_pose_without_retry(smach.State):
 			except rospy.ServiceException, e:
 				error_message = "%s"%e
 				rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
+				userdata.task_outcome_String = 'failed'
+                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# evaluate sevice response
@@ -368,6 +390,8 @@ class approach_pose_without_retry(smach.State):
 					except rospy.ServiceException, e:
 						error_message = "%s"%e
 						rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
+				userdata.task_outcome_String = 'failed'
+                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 					return 'failed'
 				else:
 					timeout = timeout + 1
@@ -442,6 +466,8 @@ class back_away(smach.State):
 			userdata.message = []
 			userdata.message.append(2)
 			userdata.message.append("Failed to back away")
+			userdata.task_outcome_String = 'failed'
+                        userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 #------------------------------------------------------------------------------------------#
@@ -455,42 +481,3 @@ class message(smach.State):
 			outcomes=['no_message_sent', 'quit'],
 			input_keys=['message'],
 			output_keys=['message'])
-
-		# Send message to master_node
-		# Message types are:
-		# 0 = QUIT
-		# 1 = INFO
-		# 2 = ERROR
-		# 3 = STATUS
-		# 4 = INTERRUPT
-		# >5 = INVALID USERDATA
-
-	def execute(self, userdata):
-
-		while True:
-			# userdata.message[0] = userdata.message[0] -1
-			message = userdata.message
-			if message[0] >= 0:
-				if message[0] == 0:
-					message[0] = "QUIT MESSAGE"
-					print "\n", userdata.message, "\n"
-					return 'quit'
-				elif message[0] == 1:
-					message[0] = "INFO MESSAGE"
-					print "\n", userdata.message, "\n"
-				elif message[0] == 2:
-					message[0] = "ERROR MESSAGE"
-					print "\n", userdata.message, "\n"
-				elif message[0] == 3:
-					message[0] = "STATUS MESSAGE"
-					print "\n", userdata.message, "\n"
-				elif message[0] == 4:
-					message[0] = "INTERRUPT MESSAGE"
-					print "\n", userdata.message, "\n"
-				else:
-					message[0] = "INVALID USERDATA MESSAGE"
-					print "\n", userdata.message, "\n"
-				userdata.message[0] = -1
-
-#------------------------------------------------------------------------------------------#
-
