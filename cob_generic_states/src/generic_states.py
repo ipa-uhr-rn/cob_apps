@@ -83,15 +83,15 @@ from actionlib_msgs.msg import *
 #------------------------------------------------------------------------------------------#
 #-----	SMACH STATES				-------------------------------------------------------#
 
-class initiate(smach.State):
+class initialize(smach.State):
 
 	def __init__(self):
 
 		smach.State.__init__(
 			self,
-			outcomes=['initiated', 'failed'],
-			input_keys=['listener', 'message'],
-			output_keys=['listener', 'message'])
+			outcomes=['initialized', 'failed'],
+			input_keys=['listener', 'message','task_outcome_String','task_outcome_Message'],
+			output_keys=['listener', 'message','task_outcome_String','task_outcome_Message'])
 		
 		# self.listener = tf.TransformListener(True, rospy.Duration(10.0))
 
@@ -193,8 +193,8 @@ class interrupt(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['no_interruption', 'interrupted'],
-			input_keys=['message'],
-			output_keys=['message'])
+			input_keys=['message','task_outcome_String','task_outcome_Message'],
+			output_keys=['message','task_outcome_String','task_outcome_Message'])
 
 		# Sync with scheduler
 		# Checks if task has been interrupted.
@@ -218,7 +218,7 @@ class interrupt(smach.State):
 			userdata.message.append(4)
 			userdata.message.append("Task has been interrupted")
 			userdata.task_outcome_String = 'canceled'
-			userdata.task_outcome_Message = 'Aufgabe wurde zugunsten einer höher priorisierten Aufgabe abgebrochen'
+			userdata.task_outcome_Message = 'Aufgabe wurde zugunsten einer hoeher priorisierten Aufgabe abgebrochen'
 			return 'interrupted'
 
 #------------------------------------------------------------------------------------------#
@@ -230,8 +230,8 @@ class approach_pose(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['succeeded', 'failed'],
-			input_keys=['pose', 'message'],
-			output_keys=['pose', 'message'])
+			input_keys=['pose', 'message','task_outcome_String','task_outcome_Message'],
+			output_keys=['pose', 'message','task_outcome_String','task_outcome_Message'])
 
 		self.pose = pose
 
@@ -314,8 +314,8 @@ class approach_pose_without_retry(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['succeeded', 'failed'],
-			input_keys=['pose', 'message'],
-			output_keys=['pose', 'message'])
+			input_keys=['pose', 'message','task_outcome_String','task_outcome_Message'],
+			output_keys=['pose', 'message','task_outcome_String','task_outcome_Message'])
 
 		sub_move_base = rospy.Subscriber("/move_base/status", GoalStatusArray, self.cb_move_base)
 		self.pose = pose
@@ -390,8 +390,8 @@ class approach_pose_without_retry(smach.State):
 					except rospy.ServiceException, e:
 						error_message = "%s"%e
 						rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
-				userdata.task_outcome_String = 'failed'
-                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+					userdata.task_outcome_String = 'failed'
+                        		userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 					return 'failed'
 				else:
 					timeout = timeout + 1
@@ -445,8 +445,8 @@ class back_away(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['backed_away', 'failed'],
-			input_keys=['message'],
-			output_keys=['message'])
+			input_keys=['message','task_outcome_String','task_outcome_Message'],
+			output_keys=['message','task_outcome_String','task_outcome_Message'])
 
 		# \todo TODO implement linear base movement
 
