@@ -75,6 +75,8 @@ import smach_ros
 from simple_script_server import *
 sss = simple_script_server()
 
+from cob_generic_states.srv import *
+
 import tf
 from tf.transformations import *
 from actionlib_msgs.msg import *
@@ -90,8 +92,8 @@ class initialize(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['initialized', 'failed'],
-			input_keys=['listener', 'message','task_outcome_String','task_outcome_Message'],
-			output_keys=['listener', 'message','task_outcome_String','task_outcome_Message'])
+			input_keys=['listener', 'message','task_outcome_string','task_outcome_message'],
+			output_keys=['listener', 'message','task_outcome_string','task_outcome_message'])
 		
 		# self.listener = tf.TransformListener(True, rospy.Duration(10.0))
 
@@ -118,14 +120,16 @@ class initialize(smach.State):
 
 		handle_torso = sss.init("torso")
 		if handle_torso.get_error_code() != 0:
-			userdata.task_outcome_String = 'failed'
-			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 			
 		handle_tray = sss.init("tray")
 		if handle_tray.get_error_code() != 0:
-			userdata.task_outcome_String = 'failed'
-			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 		#handle_arm = sss.init("arm")
@@ -138,8 +142,9 @@ class initialize(smach.State):
 
 		handle_base = sss.init("base")
 		if handle_base.get_error_code() != 0:
-			userdata.task_outcome_String = 'failed'
-			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'		
 		
 		######################
@@ -152,14 +157,16 @@ class initialize(smach.State):
 		
 		handle_torso = sss.recover("torso")
 		if handle_torso.get_error_code() != 0:
-			userdata.task_outcome_String = 'failed'
-			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 		
 		handle_tray = sss.recover("tray")
 		if handle_tray.get_error_code() != 0:
-			userdata.task_outcome_String = 'failed'
-			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 		#handle_arm = sss.recover("arm")
@@ -172,8 +179,9 @@ class initialize(smach.State):
 
 		handle_base = sss.recover("base")
 		if handle_base.get_error_code() != 0:
-			userdata.task_outcome_String = 'failed'
-			userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 		# set light
@@ -193,8 +201,8 @@ class interrupt(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['no_interruption', 'interrupted'],
-			input_keys=['message','task_outcome_String','task_outcome_Message'],
-			output_keys=['message','task_outcome_String','task_outcome_Message'])
+			input_keys=['message','task_outcome_string','task_outcome_message'],
+			output_keys=['message','task_outcome_string','task_outcome_message'])
 
 		# Sync with scheduler
 		# Checks if task has been interrupted.
@@ -203,23 +211,37 @@ class interrupt(smach.State):
 
 	def execute(self, userdata):
 
-		print "\nHas task been interrupted?\n"
-		while True:
-			var = raw_input("1 = no, 2 = yes\n")
-			if var == str(1) or var == str(2):
-				break
-		if var == str(1):
-			userdata.message = []
-			userdata.message.append(3)
-			userdata.message.append("Task has not been interrupted, continuing task")
+		#print "\nHas task been interrupted?\n"
+		#while True:
+		#	var = raw_input("1 = no, 2 = yes\n")
+		#	if var == str(1) or var == str(2):
+		#		break
+
+		try:
+			rospy.wait_for_service('gui_server/higher_prio_order_available')
+		except rospy.ROSException, e:
+			print "Service not available: %s"%e
+			rospy.logerr("gui_server not available")
 			return 'no_interruption'
-		else:
-			userdata.message = []
-			userdata.message.append(4)
-			userdata.message.append("Task has been interrupted")
-			userdata.task_outcome_String = 'canceled'
-			userdata.task_outcome_Message = 'Aufgabe wurde zugunsten einer hoeher priorisierten Aufgabe abgebrochen'
-			return 'interrupted'
+		try:
+			higher_prio_order_available = rospy.ServiceProxy('gui_server/higher_prio_order_available', HigherPrioOrderAvailable)
+			resp = higher_prio_order_available()
+			if resp.available.data:
+				userdata.message = []
+				userdata.message.append(4)
+				userdata.message.append("Task has been interrupted")
+				if userdata.task_outcome_string == 'undefined':
+					userdata.task_outcome_string = 'canceled'
+					userdata.task_outcome_message = 'Aufgabe wurde zugunsten einer hoeher priorisierten Aufgabe abgebrochen'
+				return 'interrupted'
+			else:
+				userdata.message = []
+				userdata.message.append(3)
+				userdata.message.append("Task has not been interrupted, continuing task")
+				return 'no_interruption'
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+			return 'no_interruption'
 
 #------------------------------------------------------------------------------------------#
 
@@ -230,8 +252,8 @@ class approach_pose(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['succeeded', 'failed'],
-			input_keys=['pose', 'message','task_outcome_String','task_outcome_Message'],
-			output_keys=['pose', 'message','task_outcome_String','task_outcome_Message'])
+			input_keys=['pose', 'message','task_outcome_string','task_outcome_message'],
+			output_keys=['pose', 'message','task_outcome_string','task_outcome_message'])
 
 		self.pose = pose
 
@@ -279,8 +301,9 @@ class approach_pose(smach.State):
 			except rospy.ROSException, e:
 				error_message = "%s"%e
 				rospy.logerr("<<%s>> service not available, error: %s",service_full_name, error_message)
-				userdata.task_outcome_String = 'failed'
-                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+				if userdata.task_outcome_string == 'undefined':
+					userdata.task_outcome_string = 'failed'
+                        		userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# check if service is callable
@@ -290,8 +313,9 @@ class approach_pose(smach.State):
 			except rospy.ServiceException, e:
 				error_message = "%s"%e
 				rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
-				userdata.task_outcome_String = 'failed'
-                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+				if userdata.task_outcome_string == 'undefined':
+					userdata.task_outcome_string = 'failed'
+        	                	userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# evaluate sevice response
@@ -314,8 +338,8 @@ class approach_pose_without_retry(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['succeeded', 'failed'],
-			input_keys=['pose', 'message','task_outcome_String','task_outcome_Message'],
-			output_keys=['pose', 'message','task_outcome_String','task_outcome_Message'])
+			input_keys=['pose', 'message','task_outcome_string','task_outcome_message'],
+			output_keys=['pose', 'message','task_outcome_string','task_outcome_message'])
 
 		sub_move_base = rospy.Subscriber("/move_base/status", GoalStatusArray, self.cb_move_base)
 		self.pose = pose
@@ -364,8 +388,9 @@ class approach_pose_without_retry(smach.State):
 			except rospy.ROSException, e:
 				error_message = "%s"%e
 				rospy.logerr("<<%s>> service not available, error: %s",service_full_name, error_message)
-				userdata.task_outcome_String = 'failed'
-                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+				if userdata.task_outcome_string == 'undefined':
+					userdata.task_outcome_string = 'failed'
+        	                	userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# check if service is callable
@@ -375,8 +400,9 @@ class approach_pose_without_retry(smach.State):
 			except rospy.ServiceException, e:
 				error_message = "%s"%e
 				rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
-				userdata.task_outcome_String = 'failed'
-                        	userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+				if userdata.task_outcome_string == 'undefined':
+					userdata.task_outcome_string = 'failed'
+        	                	userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 				return 'failed'
 		
 			# evaluate sevice response
@@ -390,8 +416,9 @@ class approach_pose_without_retry(smach.State):
 					except rospy.ServiceException, e:
 						error_message = "%s"%e
 						rospy.logerr("calling <<%s>> service not successfull, error: %s",service_full_name, error_message)
-					userdata.task_outcome_String = 'failed'
-                        		userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+						if userdata.task_outcome_string == 'undefined':
+							userdata.task_outcome_string = 'failed'
+        	                			userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 					return 'failed'
 				else:
 					timeout = timeout + 1
@@ -445,8 +472,8 @@ class back_away(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['backed_away', 'failed'],
-			input_keys=['message','task_outcome_String','task_outcome_Message'],
-			output_keys=['message','task_outcome_String','task_outcome_Message'])
+			input_keys=['message','task_outcome_string','task_outcome_message'],
+			output_keys=['message','task_outcome_string','task_outcome_message'])
 
 		# \todo TODO implement linear base movement
 
@@ -466,8 +493,9 @@ class back_away(smach.State):
 			userdata.message = []
 			userdata.message.append(2)
 			userdata.message.append("Failed to back away")
-			userdata.task_outcome_String = 'failed'
-                        userdata.task_outcome_Message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+        	                userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
 			return 'failed'
 
 #------------------------------------------------------------------------------------------#
