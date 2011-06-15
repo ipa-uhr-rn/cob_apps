@@ -118,6 +118,13 @@ class initialize(smach.State):
 		#if handle_head.get_error_code() != 0:
 		#	return 'failed'
 
+		handle_head = sss.init("head")
+		if handle_head.get_error_code() != 0:
+			if userdata.task_outcome_string == 'undefined':
+				userdata.task_outcome_string = 'failed'
+				userdata.task_outcome_message = 'Hardwarefehler. Roboter nicht funktionsbereit'
+			return 'failed'
+
 		handle_torso = sss.init("torso")
 		if handle_torso.get_error_code() != 0:
 			if userdata.task_outcome_string == 'undefined':
