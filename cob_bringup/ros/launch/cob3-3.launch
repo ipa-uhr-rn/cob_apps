@@ -35,7 +35,7 @@
 
 	<group>
 		<machine name="pc2" address="cob3-3-pc2" default="true"/>
-		<include file="$(find cob_camera_sensors)/ros/launch/all_cameras.launch" />
+		<!--include file="$(find cob_camera_sensors)/ros/launch/all_cameras.launch" /-->
 	</group>
 
 </launch>
