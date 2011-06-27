@@ -9,7 +9,7 @@
 	
 		<!-- start robot_state_publisher -->
 		<node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub">
-			<remap from="/joint_states" to="/joint_states_combined"/>
+			<!--remap from="/joint_states" to="/joint_states_combined"/-->
 		</node>
 
 		<!-- startup hardware -->
