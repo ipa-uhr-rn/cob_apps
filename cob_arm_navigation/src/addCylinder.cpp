@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
   cylinder_object.id = "pole";
   cylinder_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
   //cylinder_object.operation.operation = mapping_msgs::CollisionObjectOperation::REMOVE;
-  cylinder_object.header.frame_id = "/base_footprint";
+  cylinder_object.header.frame_id = "/map";
   cylinder_object.header.stamp = ros::Time::now();
   geometric_shapes_msgs::Shape object;
   object.type = geometric_shapes_msgs::Shape::CYLINDER;

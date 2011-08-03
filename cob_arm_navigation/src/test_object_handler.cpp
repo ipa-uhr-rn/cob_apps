@@ -29,8 +29,6 @@
  ****************************************************************/
 
 
-
-
 #include <ros/ros.h>
 #include <cob_arm_navigation/HandleObject.h>
 
@@ -39,19 +37,46 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "test_object_handler");
-  if (argc != 2)
+  if (argc != 3)
   {
-    ROS_INFO("usage: test_object_handler <object_name>");
+    ROS_INFO("usage: test_object_handler [add,remove,attach,detach] <object_name>");
     return 1;
   }
 
   ros::NodeHandle n;
+  ros::ServiceClient client;
   
-  ros::service::waitForService("object_handler/add_object");
-  ros::ServiceClient client = n.serviceClient<cob_arm_navigation::HandleObject>("object_handler/add_object");
+  std::string command = argv[1];
+
+  if (command=="add")
+  {
+     ros::service::waitForService("object_handler/add_object");
+     client = n.serviceClient<cob_arm_navigation::HandleObject>("object_handler/add_object");
+  }
+  else if (command=="remove")
+  {
+     ros::service::waitForService("object_handler/remove_object");
+     client = n.serviceClient<cob_arm_navigation::HandleObject>("object_handler/remove_object");    
+  }
+  else if (command=="attach")
+  {
+     ros::service::waitForService("object_handler/attach_object");
+     client = n.serviceClient<cob_arm_navigation::HandleObject>("object_handler/attach_object");    
+  }
+  else if (command=="detach")
+  {
+     ros::service::waitForService("object_handler/detach_object");
+     client = n.serviceClient<cob_arm_navigation::HandleObject>("object_handler/detach_object");    
+  }
+  else
+  {
+     ROS_ERROR("Second Argument must be either add, remove, attach or detach");
+     return 1;
+  }
+
   cob_arm_navigation::HandleObject::Request req;
   cob_arm_navigation::HandleObject::Response res;
-  req.object.data = argv[1];
+  req.object.data = argv[2];  
 
   if (client.call(req, res))
   {

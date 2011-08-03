@@ -48,7 +48,6 @@ groups:
       arm_6_link
       arm_7_link
 
-
   - name: hand
     joints:
       sdh_finger_11_joint

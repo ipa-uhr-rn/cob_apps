@@ -9,13 +9,17 @@ groups:
 arm:
   planner_type: JointPlanner
   planner_configs:
-    - SBLkConfig1 
-    - LBKPIECEkConfig1
+#    - SBLkConfig1 
+#    - LBKPIECEkConfig1
+     - RRTConnectConfig1
+
   kinematics_solver: pr2_arm_kinematics/PR2ArmKinematicsPlugin
+#  kinematics_solver: cob3_arm_kinematics/IKFastKinematicsPlugin
 #  redundancy:
 #    name: r_upper_arm_roll_joint
   tip_name: arm_7_link
   root_name: arm_0_link
+  robot: cob3-3
   projection_evaluator: joint_state
 
   
@@ -25,5 +29,8 @@ planner_configs:
 
   LBKPIECEkConfig1:
     type: kinematic::LBKPIECE
+    
+  RRTConnectConfig1:
+    type: kinematic::RRTConnect
     
 publish_diagnostics: true

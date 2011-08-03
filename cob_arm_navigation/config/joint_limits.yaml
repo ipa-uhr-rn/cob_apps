@@ -7,60 +7,69 @@ joint_limits:
 
   arm_1_joint:
     has_position_limits: true
-    min_position: -6.1831853
-    max_position: 6.1831853
+    min_position: -2.9670    
+    #lower="-2.9670" upper="2.9670"
+    max_position: 2.9670
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4 
+    # 0.8
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4 
+    #0.8
   arm_2_joint:
     has_position_limits: true
-    min_position: -1.9943951
-    max_position: 1.9943951
+    min_position: -2.0943951    
+    #lower="-2.0943" upper="2.0943"
+    max_position: 2.0943951
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4
   arm_3_joint:
     has_position_limits: true
-    min_position: -6.1831853
-    max_position: 6.1831853
+    min_position: -2.9670    
+    #lower="-2.9670" upper="2.9670"
+    max_position: 2.9670
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4
   arm_4_joint:
     has_position_limits: true
-    min_position: -1.9943951
-    max_position: 1.9943951
+    min_position: -2.0943951    
+    #lower="-2.0943" upper="2.0943"
+    max_position: 2.0943951
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4
   arm_5_joint:
     has_position_limits: true
-    min_position: -6.1831853
-    max_position: 6.1831853
+    min_position: -2.9670    
+    #lower="-2.9670" upper="2.9670"
+    max_position: 2.9670
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4
   arm_6_joint:
     has_position_limits: true
-    min_position: -1.9943951
-    max_position: 1.9943951
+    min_position: -2.0943951    
+    #lower="-2.0943951" upper="2.0943951"
+    max_position: 2.0943951
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4
   arm_7_joint:
     has_position_limits: true
-    min_position: -6.1831853
-    max_position: 6.1831853
+    min_position: -2.9670    
+    #lower="-2.9670" upper="2.9670"
+    max_position: 2.9670
     has_velocity_limits: true
-    max_velocity: 0.8
+    max_velocity: 0.4
     has_acceleration_limits: true
-    max_acceleration: 0.8
+    max_acceleration: 0.4
   
 
 ##########################

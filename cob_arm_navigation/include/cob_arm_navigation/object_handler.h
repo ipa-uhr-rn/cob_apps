@@ -132,36 +132,69 @@ private:
 		std::size_t found_box = model_parameter.find(pattern);
 		if (found_box!=std::string::npos)
 		{
-			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_box));
-			bool success;
-			std::vector< double > dimensions;
-			
-			success = parse_box(model_parameter, dimensions);
-			if(!success)
-			{
-				ROS_ERROR("Error while parsing a geom:box model. Aborting!");
-		  
-				res.success.data = false;
-				res.error_message.data = "Error while parsing a geom:box model.";
 
-				return false;
-			}
-			
-			success = compose_box(model_name, dimensions, collision_object);
-			
-			if(!success)
+			while (found_box!=std::string::npos)
 			{
-				ROS_ERROR("Error while composing the collision_object. Aborting!");
-		  
-				res.success.data = false;
-				res.error_message.data = "Error while composing the collision_object.";
+				std::vector< std::string > name;
+				std::vector< double > dimensions;
+				std::vector< double > location;
+				std::vector< double > rotation;
 
-				return false;
+				ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_box));
+				bool success,success_d,success_l,success_r, success_n;
+				
+				success_n = parse_box_name(model_parameter, name, found_box);
+				success_d = parse_box_dimensions(model_parameter, dimensions,found_box);
+				success_l = parse_box_location(model_parameter, location,found_box);
+				success_r = parse_box_rotation(model_parameter, rotation,found_box);
+
+				if(!(success_n && success_d && success_l && success_r))
+				{
+					ROS_ERROR("Error while parsing a geom:box model. Aborting!");
+			  
+					res.success.data = false;
+					res.error_message.data = "Error while parsing a geom:box model.";
+	
+					return false;
+				}
+				
+				success = compose_box(model_name, dimensions,location,rotation, collision_object, name[0]);
+				
+				if(!success)
+				{
+					ROS_ERROR("Error while composing the collision_object. Aborting!");
+			  
+					res.success.data = false;
+					res.error_message.data = "Error while composing the collision_object.";
+	
+					return false;
+				}
+
+				ROS_INFO("Added %s to the object %s!",name[0].c_str(), model_name.c_str());
+	
+				found_box = model_parameter.find(pattern,found_box+1);
+				//second search necessary since each <geom:box> has a </geom:box>
+				found_box = model_parameter.find(pattern,found_box+1);
+
+				//clear parsing for next box
+				name.pop_back();
+				while(!dimensions.empty())
+				{
+					dimensions.pop_back();
+				}
+				while(!location.empty())
+				{
+					location.pop_back();
+				}
+				while(!rotation.empty())
+				{
+					rotation.pop_back();
+				}
+
 			}
-			collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
 		}
 		else
-		{
+		{str:
 		  ROS_ERROR("%s not found", pattern.c_str());
 		  ROS_ERROR("I can't parse this model. Aborting!");
 		  
@@ -170,16 +203,18 @@ private:
 		  
 		  return false;
 		}
-
-
+	
+		collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
+	
 		m_object_in_map_pub.publish(collision_object);
 
-		ROS_INFO("Object added to environment server!");
+		ROS_INFO("%s added to environment server!",model_name.c_str());
 
 		res.success.data = true;
 		res.error_message.data = "Object added to environment server!";
 		return true;
 	}
+	
 	
 	
 	bool remove_object(cob_arm_navigation::HandleObject::Request  &req,
@@ -264,7 +299,7 @@ private:
 					att_object.object = srv.response.collision_objects[i];
 					//attach it to the SDH
 					att_object.link_name = "sdh_palm_link";
-					att_object.touch_links.push_back("sdh_grasp_link");
+					//att_object.touch_links.push_back("sdh_grasp_link");
 					att_object.touch_links.push_back("sdh_finger_11_link");
 					att_object.touch_links.push_back("sdh_finger_12_link");
 					att_object.touch_links.push_back("sdh_finger_13_link");
@@ -370,14 +405,51 @@ private:
 	
 	
 	//helper functions
-	bool parse_box(std::string model_parameter, std::vector< double > &dimensions)
+	bool parse_box_name(std::string model_parameter, std::vector< std::string> &name, std::size_t start_point)
+	{
+		//parsing-scheme only valid for "box" (size: x,y,z)
+		std::string pattern;
+		std::size_t found_name, found_end;
+
+		pattern = "name=";
+		found_name=model_parameter.find(pattern,start_point);
+		if (found_name!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_name));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = ">";
+		found_end=model_parameter.find(pattern, found_name);
+		if (found_end!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_end));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_x = found_end - 1 - found_name - 6;
+		std::string name_found = model_parameter.substr(found_name+6, length_x);
+		ROS_DEBUG("name: %s, real_length: %d", name_found.c_str(), int(length_x));
+
+		ROS_INFO("geom name: %s", name_found.c_str());
+
+		name.push_back(name_found);
+			
+		return true;
+	}
+
+	bool parse_box_dimensions(std::string model_parameter, std::vector< double > &dimensions, std::size_t start_point)
 	{
 		//parsing-scheme only valid for "box" (size: x,y,z)
 		std::string pattern;
 		std::size_t found_size, found_p, found_x, found_y, found_z;
 
 		pattern = "size";
-		found_size=model_parameter.find(pattern);
+		found_size=model_parameter.find(pattern,start_point);
 		if (found_size!=std::string::npos)
 			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_size));
 		else
@@ -421,7 +493,7 @@ private:
 		ROS_DEBUG("x: %s, real_length_x: %d", x.c_str(), int(length_x));
 
 		double x_d = strtod(x.c_str(), NULL);
-		ROS_INFO("x as double: %f", x_d);
+		ROS_DEBUG("x dimension: %f", x_d);
 
 
 
@@ -449,9 +521,123 @@ private:
 		ROS_DEBUG("y: %s, real_length_y: %d", y.c_str(), int(length_y));
 
 		double y_d = strtod(y.c_str(), NULL);
-		ROS_INFO("y as double: %f", y_d);
+		ROS_DEBUG("y dimension: %f", y_d);
+
+		pattern = " ";
+		found_z=model_parameter.find_first_not_of(pattern, found_p);
+		if (found_z!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_z));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = "<";	
+		found_p=model_parameter.find_first_of(pattern, found_z);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_z = found_p - found_z;
+		std::string z = model_parameter.substr(found_z, length_z);
+		ROS_DEBUG("z: %s, real_length_z: %d", z.c_str(), int(length_z));
+
+		double z_d = strtod(z.c_str(), NULL);
+		ROS_DEBUG("z dimension: %f", z_d);
+
+		dimensions.push_back(x_d);
+		dimensions.push_back(y_d);
+		dimensions.push_back(z_d);
+			
+		return true;
+	}
 
 
+	bool parse_box_location(std::string model_parameter, std::vector< double > &location, std::size_t start_point)
+	{
+		//parsing-scheme only valid for "box" (size: x,y,z)
+		std::string pattern;
+		std::size_t found_size, found_p, found_x, found_y, found_z;
+
+		pattern = "xyz";
+		found_size=model_parameter.find(pattern,start_point);
+		if (found_size!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_size));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = ">";
+		found_p=model_parameter.find(pattern, found_size);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = " ";
+		found_x=model_parameter.find_first_not_of(pattern, found_p+1);
+		if (found_x!=std::string::npos)
+			ROS_DEBUG("first not \"%s\" found at: %d", pattern.c_str(), int(found_x));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = " ";	
+		found_p=model_parameter.find_first_of(pattern, found_x);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_x = found_p - found_x;
+		std::string x = model_parameter.substr(found_x, length_x);
+		ROS_DEBUG("x: %s, real_length_x: %d", x.c_str(), int(length_x));
+
+		double x_d = strtod(x.c_str(), NULL);
+		ROS_DEBUG("x location: %f", x_d);
+
+
+
+		pattern = " ";
+		found_y=model_parameter.find_first_not_of(pattern, found_p);
+		if (found_y!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_y));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		found_p=model_parameter.find_first_of(pattern, found_y);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_y = found_p - found_y;
+		std::string y = model_parameter.substr(found_y, length_y);
+		ROS_DEBUG("y: %s, real_length_y: %d", y.c_str(), int(length_y));
+
+		double y_d = strtod(y.c_str(), NULL);
+		ROS_DEBUG("y location: %f", y_d);
 
 
 		pattern = " ";
@@ -479,25 +665,211 @@ private:
 		ROS_DEBUG("z: %s, real_length_z: %d", z.c_str(), int(length_z));
 
 		double z_d = strtod(z.c_str(), NULL);
-		ROS_INFO("z as double: %f", z_d);
+		ROS_DEBUG("z location: %f", z_d);
 
-		dimensions.push_back(x_d);
-		dimensions.push_back(y_d);
-		dimensions.push_back(z_d);
+		location.push_back(x_d);
+		location.push_back(y_d);
+		location.push_back(z_d);
 			
 		return true;
 	}
 	
+
+	bool parse_box_rotation(std::string model_parameter, std::vector< double > &rotation, std::size_t start_point)
+	{
+		//parsing-scheme only valid for "box" (size: x,y,z)
+		std::string pattern;
+		std::size_t found_size, found_p, found_x, found_y, found_z;
+
+		pattern = "rpy";
+		found_size=model_parameter.find(pattern,start_point);
+		if (found_size!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_size));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = ">";
+		found_p=model_parameter.find(pattern, found_size);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = " ";
+		found_x=model_parameter.find_first_not_of(pattern, found_p+1);
+		if (found_x!=std::string::npos)
+			ROS_DEBUG("first not \"%s\" found at: %d", pattern.c_str(), int(found_x));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = " ";	
+		found_p=model_parameter.find_first_of(pattern, found_x);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_x = found_p - found_x;
+		std::string x = model_parameter.substr(found_x, length_x);
+		ROS_DEBUG("r: %s, real_length_r: %d", x.c_str(), int(length_x));
+
+		double x_d = strtod(x.c_str(), NULL);
+		ROS_DEBUG("r rotation: %f", x_d);
+
+		pattern = " ";
+		found_y=model_parameter.find_first_not_of(pattern, found_p);
+		if (found_y!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_y));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		found_p=model_parameter.find_first_of(pattern, found_y);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_y = found_p - found_y;
+		std::string y = model_parameter.substr(found_y, length_y);
+		ROS_DEBUG("p: %s, real_length_p: %d", y.c_str(), int(length_y));
+
+		double y_d = strtod(y.c_str(), NULL);
+		ROS_DEBUG("p rotation: %f", y_d);
+
+
+		pattern = " ";
+		found_z=model_parameter.find_first_not_of(pattern, found_p);
+		if (found_z!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_z));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		pattern = "<";	
+		found_p=model_parameter.find_first_of(pattern, found_z);
+		if (found_p!=std::string::npos)
+			ROS_DEBUG("first \"%s\" found at: %d", pattern.c_str(), int(found_p));
+		else
+		{
+			ROS_ERROR("%s not found", pattern.c_str());
+			return false;
+		}
+
+		size_t length_z = found_p - found_z;
+		std::string z = model_parameter.substr(found_z, length_z);
+		ROS_DEBUG("y: %s, real_length_y: %d", z.c_str(), int(length_z));
+
+		double z_d = strtod(z.c_str(), NULL);
+		ROS_DEBUG("y rotation: %f", z_d);
+
+		rotation.push_back(x_d);
+		rotation.push_back(y_d);
+		rotation.push_back(z_d);
+			
+		return true;
+	}
 	
-	bool compose_box(std::string model_name, std::vector< double > dimensions, mapping_msgs::CollisionObject &collision_object)
+
+	bool compose_box(std::string model_name, std::vector< double > dimensions, std::vector< double > &location, std::vector< double > &rotation, mapping_msgs::CollisionObject &collision_object, std::string name)
 	{
 		
 		gazebo::GetModelState state_srv;
 
 		state_srv.request.model_name = model_name;
+		double x0,y0,z0,x,y,z;
+		double r,p,yy,roll,pitch,yaw;
+		double qx,qy,qz,qw,q0,q1,q2,q3;
+		double newx,newy,newz;
+
 		if (m_state_client.call(state_srv))
 		{
-			ROS_INFO("ModelPose (x,y,z): (%f,%f,%f)", state_srv.response.pose.position.x, state_srv.response.pose.position.y, state_srv.response.pose.position.z);
+
+			ROS_INFO("Object Dimensions (x,y,z): (%f,%f,%f)",dimensions[0],dimensions[1],dimensions[2]);
+
+			//location of object origin
+			x0 = state_srv.response.pose.position.x;
+			y0 = state_srv.response.pose.position.y;
+			z0 = state_srv.response.pose.position.z;
+			ROS_INFO("Origin Location (x,y,z): (%f,%f,%f)",x0, y0, z0);
+
+			//rotation of the object origin
+			qx = state_srv.response.pose.orientation.x;
+			qy = state_srv.response.pose.orientation.y;
+			qz = state_srv.response.pose.orientation.z;
+			qw = state_srv.response.pose.orientation.w;
+			ROS_INFO("Origin orientation(x,y,z,w): (%f,%f,%f,%f)", qx,qy,qz,qw);
+
+			//convert quat to rpy
+			roll = atan2(2*(qy*qz + qw*qx), qw*qw - qx*qx - qy*qy + qz*qz);
+			pitch = asin(-2*(qx*qz - qw*qy));
+			yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz);
+			ROS_INFO("Origin RPY (r,p,y): (%f,%f,%f)", roll,pitch,yaw);
+
+			//object's translation from origin
+			x = location[0];
+			y = location[1];
+			z = location[2];
+			ROS_INFO("Object Translation from Origin (x,y,z): (%f,%f,%f)", x,y,z);
+
+			//for positions of objects not located at center.....need to use transfomation matrix
+			newx=x*(cos(pitch)*cos(yaw)) + y*(-cos(roll)*sin(yaw)-sin(roll)*sin(pitch)*cos(yaw)) + z*(sin(roll)*sin(yaw)+cos(roll)*sin(pitch)*cos(yaw));
+			newy=x*(cos(pitch)*sin(yaw)) + y*(cos(roll)*cos(yaw)+sin(roll)*sin(pitch)*sin(yaw)) + z*(-sin(roll)*cos(yaw)+cos(roll)*sin(pitch)*sin(yaw));
+			newz=x*(-sin(pitch)) + y*(sin(roll)*cos(pitch)) + z*(cos(roll)*cos(pitch));
+			ROS_INFO("NEW Object translation from Origin (x,y,z): (%f,%f,%f)", newx,newy,newz);
+			
+			//add translation of object origin
+			x = x0 + newx;
+			y = y0 + newy;
+			z = z0 + newz;
+			ROS_INFO("Object actual Location (x,y,z): (%f,%f,%f)", x,y,z);
+
+			//roll pitch yaw of object from origin
+			r = rotation[0];
+			p = rotation[1];
+			yy = rotation[2];
+			ROS_INFO("Object Rotation from Origin (r,p,y): (%f,%f,%f)", r,p,yy);
+
+			//add the rotation of the object to the rotation of the origin
+			r = r+roll;
+			p = p+pitch;
+			yy = yy+yaw;
+			ROS_INFO("Object absolute orientation (r,p,y): (%f,%f,%f)", r,p,yy);
+	
+			//convert rpy to quaternian
+			q0=sin(r/2)*cos(p/2)*cos(yy/2) - cos(r/2)*sin(p/2)*sin(yy/2);  	//x
+			q1=cos(r/2)*sin(p/2)*cos(yy/2) + sin(r/2)*cos(p/2)*sin(yy/2);  	//y
+			q2=cos(r/2)*cos(p/2)*sin(yy/2) - sin(r/2)*sin(p/2)*cos(yy/2);	//z
+			q3=cos(r/2)*cos(p/2)*cos(yy/2) + sin(r/2)*sin(p/2)*sin(yy/2);	//w
+			ROS_INFO("Object quaternian(x,y,z,w): (%f,%f,%f,%f)",q0,q1,q2,q3);
+
+			//normalize the quaternian
+			double mag = sqrt(qx*qx+qy*qy+qz*qz+qw*qw);
+			qx = qx/mag;
+			qy = qy/mag;
+			qz = qz/mag;
+			qw = qw/mag;
+			ROS_INFO("Normalized Object orientation(x,y,z,w): (%f,%f,%f,%f)", qx,qy,qz,qw);
+
 		}
 		else
 		{
@@ -506,31 +878,31 @@ private:
 		}
 
 		collision_object.id = model_name;
-		//collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
-		//collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::REMOVE;
+
+		//used to add multiple boxes to one object
+		double shapes_size = collision_object.shapes.size();
+
 		collision_object.header.frame_id = frame_id;
 		collision_object.header.stamp = ros::Time::now();
-		collision_object.shapes.resize(1);
-		collision_object.poses.resize(1);
+		collision_object.shapes.resize(shapes_size+1);
+		collision_object.poses.resize(shapes_size+1);
 
 		//ToDo: figure out how *.model-size and *.urdf-extend are related
-		//ToDo: figure out where the *.model origin is located (top,center,bottom?)
-		
-		//it seems to be correct for the milk_box now
-		//is the position of the model origin consistent with the other models?
-		collision_object.shapes[0].type = geometric_shapes_msgs::Shape::BOX;
-		collision_object.shapes[0].dimensions.push_back(dimensions[0]);
-		collision_object.shapes[0].dimensions.push_back(dimensions[1]);
-		collision_object.shapes[0].dimensions.push_back(dimensions[2]);
 
-		collision_object.poses[0].position.x = state_srv.response.pose.position.x;//+(dimensions[0]/2.0);
-		collision_object.poses[0].position.y = state_srv.response.pose.position.y;//+(dimensions[1]/2.0);
-		collision_object.poses[0].position.z = state_srv.response.pose.position.z+(dimensions[2]/2.0);
-		collision_object.poses[0].orientation.x = state_srv.response.pose.orientation.x;
-		collision_object.poses[0].orientation.y = state_srv.response.pose.orientation.y;
-		collision_object.poses[0].orientation.z = state_srv.response.pose.orientation.z;
-		collision_object.poses[0].orientation.w = state_srv.response.pose.orientation.w;
-		
+		//*.model origin is located at center of box
+		collision_object.shapes[shapes_size].type = geometric_shapes_msgs::Shape::BOX;
+		collision_object.shapes[shapes_size].dimensions.push_back(dimensions[0]);
+		collision_object.shapes[shapes_size].dimensions.push_back(dimensions[1]);
+		collision_object.shapes[shapes_size].dimensions.push_back(dimensions[2]);
+
+		collision_object.poses[shapes_size].position.x = x;
+		collision_object.poses[shapes_size].position.y = y;
+		collision_object.poses[shapes_size].position.z = z;//+(dimensions[2]/2.0);
+		collision_object.poses[shapes_size].orientation.x = qx;
+		collision_object.poses[shapes_size].orientation.y = qy;
+		collision_object.poses[shapes_size].orientation.z = qz;
+		collision_object.poses[shapes_size].orientation.w = qw;
+	
 		return true;
 	}
 

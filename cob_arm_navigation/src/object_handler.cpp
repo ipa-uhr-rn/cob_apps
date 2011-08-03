@@ -36,7 +36,7 @@
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "cob_objecgt_handler_node");
+	ros::init(argc, argv, "cob_object_handler_node");
 	
 	Object_Handler* object_handler = new Object_Handler();
 

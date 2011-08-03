@@ -474,7 +474,7 @@ void TeleopCOB::setInitValues()
  */
 void TeleopCOB::joint_states_cb(const sensor_msgs::JointState::ConstPtr &joint_states_msg)
 {
-	if (!got_init_values_ && stopped_ && joy_active_)
+/*	if (!got_init_values_ && stopped_ && joy_active_)
 	{
 		ROS_DEBUG("joint_states_cb: getting init values");
 		for (int j = 0; j<joint_names_.size(); j++ )
@@ -493,8 +493,9 @@ void TeleopCOB::joint_states_cb(const sensor_msgs::JointState::ConstPtr &joint_s
 				}
 			}
 		}
-		setInitValues();
+//		setInitValues();
 	}
+*/
 }
 
 /*!

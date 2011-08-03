@@ -86,6 +86,7 @@ from cob_light.msg import *
 from cob_sound.msg import *
 from cob_script_server.msg import *
 from cob_srvs.srv import *
+from cob_arm_navigation.srv import *
 
 # graph includes
 import pygraphviz as pgv
@@ -641,8 +642,8 @@ class simple_script_server:
 		
 		# sending goal
 		client_goal = MoveArmGoal()
-		client_goal.planner_service_name = "ompl_planning/plan_kinematic_path"		#choose planner
-		#client_goal.planner_service_name = "cob_prmce_planner/plan_kinematic_path"
+		#client_goal.planner_service_name = "ompl_planning/plan_kinematic_path"		#choose planner
+		client_goal.planner_service_name = "cob_prmce_planner/plan_kinematic_path"
 		client_goal.motion_plan_request = motion_plan
 		#print client_goal
 		self.client.send_goal(client_goal)
@@ -814,8 +815,8 @@ class simple_script_server:
 		
 		# sending goal
 		client_goal = MoveArmGoal()
-		client_goal.planner_service_name = "ompl_planning/plan_kinematic_path"		#choose planner
-		#client_goal.planner_service_name = "cob_prmce_planner/plan_kinematic_path"
+		#client_goal.planner_service_name = "ompl_planning/plan_kinematic_path"		#choose planner
+		client_goal.planner_service_name = "cob_prmce_planner/plan_kinematic_path"
 		client_goal.motion_plan_request = motion_plan
 		client_goal.disable_ik = False
 		#print client_goal
@@ -1053,9 +1054,11 @@ class simple_script_server:
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			ah.set_failed(1)
+			rospy.logerr("FAILED TO ADD OBJECT")
 			return ah
 		
 		ah.set_succeeded()
+		rospy.loginfo("Added <<%s>> to collision space",object_name)
 		return ah
 
 
@@ -1080,9 +1083,11 @@ class simple_script_server:
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			ah.set_failed(1)
+			rospy.logerr("FAILED TO REMOVE OBJECT")
 			return ah
 		
 		ah.set_succeeded()
+		rospy.loginfo("Removed <<%s>> from collision space",object_name)
 		return ah
 
 
@@ -1107,9 +1112,11 @@ class simple_script_server:
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			ah.set_failed(1)
+			rospy.logerr("FAILED TO ATTACH OBJECT")
 			return ah
 		
 		ah.set_succeeded()
+		rospy.loginfo("Attached <<%s>> to robot",object_name)
 		return ah
 
 
@@ -1134,9 +1141,11 @@ class simple_script_server:
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			ah.set_failed(1)
+			rospy.logerr("FAILED TO DETACH OBJECT")
 			return ah
 		
 		ah.set_succeeded()
+		rospy.loginfo("Detached<<%s>> to robot",object_name)
 		return ah
 				
 
