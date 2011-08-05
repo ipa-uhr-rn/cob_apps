@@ -42,7 +42,9 @@
 #include <cob_arm_navigation/HandleObject.h>
 #include <gazebo/GetModelState.h>
 #include <mapping_msgs/CollisionObject.h>
+//fxm: ros-electric => #include <arm_navigation_msgs/CollisionObject.h>
 #include <mapping_msgs/AttachedCollisionObject.h>
+//fxm: ros-electric => #include <arm_navigation_msgs/AttachedCollisionObject.h>
 #include <planning_environment_msgs/GetCollisionObjects.h>
 
 

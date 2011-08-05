@@ -59,6 +59,8 @@
 #include <ros/ros.h>
 
 #include <mapping_msgs/CollisionObject.h>
+//fxm: ros-electric => #include <arm_navigation_msgs/CollisionObject.h>
+
 #include <geometric_shapes_msgs/Shape.h>
 
 int main(int argc, char** argv) {
