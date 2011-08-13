@@ -61,10 +61,10 @@
 #include <ros/ros.h>
 #include <stdio.h>
 #include <vector>
+#include <tinyxml.h>
 
 #include <arm_navigation_msgs/CollisionObject.h>
 #include <arm_navigation_msgs/Shape.h>
-#include <tinyxml/tinyxml.h>
 #include <urdf/model.h>
 #include <planning_models/kinematic_model.h>
 #include <tf/tf.h>
