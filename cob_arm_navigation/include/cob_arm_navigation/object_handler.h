@@ -41,11 +41,9 @@
 
 #include <cob_arm_navigation/HandleObject.h>
 #include <gazebo/GetModelState.h>
-#include <mapping_msgs/CollisionObject.h>
-//fxm: ros-electric => #include <arm_navigation_msgs/CollisionObject.h>
-#include <mapping_msgs/AttachedCollisionObject.h>
-//fxm: ros-electric => #include <arm_navigation_msgs/AttachedCollisionObject.h>
-#include <planning_environment_msgs/GetCollisionObjects.h>
+#include <arm_navigation_msgs/CollisionObject.h>
+#include <arm_navigation_msgs/AttachedCollisionObject.h>
+#include <arm_navigation_msgs/GetCollisionObjects.h>
 
 
 
@@ -80,12 +78,12 @@ public:
 		ROS_INFO("...done!");
 		
 		
-		m_object_in_map_pub  = rh.advertise<mapping_msgs::CollisionObject>("collision_object", 1);
-		m_att_object_in_map_pub  = rh.advertise<mapping_msgs::AttachedCollisionObject>("attached_collision_object", 1);
+		m_object_in_map_pub  = rh.advertise<arm_navigation_msgs::CollisionObject>("collision_object", 1);
+		m_att_object_in_map_pub  = rh.advertise<arm_navigation_msgs::AttachedCollisionObject>("attached_collision_object", 1);
 
 		
 		m_state_client = rh.serviceClient<gazebo::GetModelState>("/gazebo/get_model_state");
-		m_collision_objects_client = rh.serviceClient<planning_environment_msgs::GetCollisionObjects>("/cob3_environment_server/get_collision_objects");
+		m_collision_objects_client = rh.serviceClient<arm_navigation_msgs::GetCollisionObjects>("/cob3_environment_server/get_collision_objects");
 
 		m_add_object_server = rh.advertiseService("/object_handler/add_object", &Object_Handler::add_object, this);
 		m_remove_object_server = rh.advertiseService("/object_handler/remove_object", &Object_Handler::remove_object, this);
@@ -127,7 +125,7 @@ private:
 			ROS_DEBUG("Parameter: %s", model_parameter.c_str());
 		}
 
-		mapping_msgs::CollisionObject collision_object;
+		arm_navigation_msgs::CollisionObject collision_object;
 
 		//find out the geom::type of the model
 		std::string pattern = "geom:box";
@@ -160,7 +158,7 @@ private:
 
 				return false;
 			}
-			collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
+			collision_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
 		}
 		else
 		{
@@ -192,7 +190,7 @@ private:
 		
 		std::string object_name = req.object.data;
 		
-		planning_environment_msgs::GetCollisionObjects srv;
+		arm_navigation_msgs::GetCollisionObjects srv;
 		
 		srv.request.include_points = false;
 		
@@ -204,9 +202,9 @@ private:
 				if(srv.response.collision_objects[i].id == object_name)
 				{
 					ROS_INFO("%s found!", object_name.c_str());
-					mapping_msgs::CollisionObject collision_object = srv.response.collision_objects[i];
+					arm_navigation_msgs::CollisionObject collision_object = srv.response.collision_objects[i];
 					
-					collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::REMOVE;
+					collision_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::REMOVE;
 					
 					m_object_in_map_pub.publish(collision_object);
 
@@ -249,7 +247,7 @@ private:
 		
 		std::string object_name = req.object.data;
 		
-		planning_environment_msgs::GetCollisionObjects srv;
+		arm_navigation_msgs::GetCollisionObjects srv;
 		
 		srv.request.include_points = false;
 		
@@ -262,7 +260,7 @@ private:
 				{
 					ROS_INFO("%s found!", object_name.c_str());
 					
-					mapping_msgs::AttachedCollisionObject att_object;
+					arm_navigation_msgs::AttachedCollisionObject att_object;
 					att_object.object = srv.response.collision_objects[i];
 					//attach it to the SDH
 					att_object.link_name = "sdh_palm_link";
@@ -277,7 +275,7 @@ private:
 					att_object.touch_links.push_back("sdh_thumb_2_link");
 					att_object.touch_links.push_back("sdh_thumb_3_link");
 					
-					att_object.object.operation.operation = mapping_msgs::CollisionObjectOperation::ATTACH_AND_REMOVE_AS_OBJECT;
+					att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ATTACH_AND_REMOVE_AS_OBJECT;
 					
 					m_att_object_in_map_pub.publish(att_object);
 
@@ -320,7 +318,7 @@ private:
 		
 		std::string object_name = req.object.data;
 		
-		planning_environment_msgs::GetCollisionObjects srv;
+		arm_navigation_msgs::GetCollisionObjects srv;
 		
 		srv.request.include_points = false;
 		
@@ -333,9 +331,9 @@ private:
 				{
 					ROS_INFO("%s found!", object_name.c_str());
 					
-					mapping_msgs::AttachedCollisionObject att_object = srv.response.attached_collision_objects[i];
+					arm_navigation_msgs::AttachedCollisionObject att_object = srv.response.attached_collision_objects[i];
 					
-					att_object.object.operation.operation = mapping_msgs::CollisionObjectOperation::DETACH_AND_ADD_AS_OBJECT;
+					att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::DETACH_AND_ADD_AS_OBJECT;
 					
 					m_att_object_in_map_pub.publish(att_object);
 
@@ -491,7 +489,7 @@ private:
 	}
 	
 	
-	bool compose_box(std::string model_name, std::vector< double > dimensions, mapping_msgs::CollisionObject &collision_object)
+	bool compose_box(std::string model_name, std::vector< double > dimensions, arm_navigation_msgs::CollisionObject &collision_object)
 	{
 		
 		gazebo::GetModelState state_srv;
@@ -508,8 +506,8 @@ private:
 		}
 
 		collision_object.id = model_name;
-		//collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
-		//collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::REMOVE;
+		//collision_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+		//collision_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::REMOVE;
 		collision_object.header.frame_id = frame_id;
 		collision_object.header.stamp = ros::Time::now();
 		collision_object.shapes.resize(1);
@@ -517,17 +515,14 @@ private:
 
 		//ToDo: figure out how *.model-size and *.urdf-extend are related
 		//ToDo: figure out where the *.model origin is located (top,center,bottom?)
-		
-		//it seems to be correct for the milk_box now
-		//is the position of the model origin consistent with the other models?
-		collision_object.shapes[0].type = geometric_shapes_msgs::Shape::BOX;
-		collision_object.shapes[0].dimensions.push_back(dimensions[0]);
-		collision_object.shapes[0].dimensions.push_back(dimensions[1]);
-		collision_object.shapes[0].dimensions.push_back(dimensions[2]);
+		collision_object.shapes[0].type = arm_navigation_msgs::Shape::BOX;
+		collision_object.shapes[0].dimensions.push_back(dimensions[0]/2.0);
+		collision_object.shapes[0].dimensions.push_back(dimensions[1]/2.0);
+		collision_object.shapes[0].dimensions.push_back(dimensions[2]/2.0);
 
-		collision_object.poses[0].position.x = state_srv.response.pose.position.x;//+(dimensions[0]/2.0);
-		collision_object.poses[0].position.y = state_srv.response.pose.position.y;//+(dimensions[1]/2.0);
-		collision_object.poses[0].position.z = state_srv.response.pose.position.z+(dimensions[2]/2.0);
+		collision_object.poses[0].position.x = state_srv.response.pose.position.x;
+		collision_object.poses[0].position.y = state_srv.response.pose.position.y;
+		collision_object.poses[0].position.z = state_srv.response.pose.position.z;
 		collision_object.poses[0].orientation.x = state_srv.response.pose.orientation.x;
 		collision_object.poses[0].orientation.y = state_srv.response.pose.orientation.y;
 		collision_object.poses[0].orientation.z = state_srv.response.pose.orientation.z;
