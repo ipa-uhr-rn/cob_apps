@@ -823,6 +823,10 @@ private:
 			roll = atan2(2*(qy*qz + qw*qx), qw*qw - qx*qx - qy*qy + qz*qz);
 			pitch = asin(-2*(qx*qz - qw*qy));
 			yaw = atan2(2*(qx*qy + qw*qz), qw*qw + qx*qx - qy*qy - qz*qz);
+		//	roll = atan2(-2*(qy*qz - qw*qx), qw*qw - qx*qx - qy*qy + qz*qz);
+		//	pitch = asin(2*(qx*qz + qw*qy));
+		//	yaw = atan2(-2*(qx*qy - qw*qz), qw*qw + qx*qx - qy*qy - qz*qz);	
+
 			ROS_INFO("Origin RPY (r,p,y): (%f,%f,%f)", roll,pitch,yaw);
 
 			//object's translation from origin
@@ -843,10 +847,10 @@ private:
 			z = z0 + newz;
 			ROS_INFO("Object actual Location (x,y,z): (%f,%f,%f)", x,y,z);
 
-			//roll pitch yaw of object from origin
-			r = rotation[0];
-			p = rotation[1];
-			yy = rotation[2];
+			//roll pitch yaw of object from origin in RADIANS!
+			r = rotation[0]*M_PI/180;
+			p = rotation[1]*M_PI/180;
+			yy = rotation[2]*M_PI/180;
 			ROS_INFO("Object Rotation from Origin (r,p,y): (%f,%f,%f)", r,p,yy);
 
 			//add the rotation of the object to the rotation of the origin
@@ -860,15 +864,19 @@ private:
 			q1=cos(r/2)*sin(p/2)*cos(yy/2) + sin(r/2)*cos(p/2)*sin(yy/2);  	//y
 			q2=cos(r/2)*cos(p/2)*sin(yy/2) - sin(r/2)*sin(p/2)*cos(yy/2);	//z
 			q3=cos(r/2)*cos(p/2)*cos(yy/2) + sin(r/2)*sin(p/2)*sin(yy/2);	//w
+		//	q0=sin(r/2)*cos(p/2)*cos(yy/2) + cos(r/2)*sin(p/2)*sin(yy/2);  	//x
+		//	q1=cos(r/2)*sin(p/2)*cos(yy/2) - sin(r/2)*cos(p/2)*sin(yy/2);  	//y
+		//	q2=cos(r/2)*cos(p/2)*sin(yy/2) + sin(r/2)*sin(p/2)*cos(yy/2);	//z
+		//	q3=cos(r/2)*cos(p/2)*cos(yy/2) - sin(r/2)*sin(p/2)*sin(yy/2);	//w
 			ROS_INFO("Object quaternian(x,y,z,w): (%f,%f,%f,%f)",q0,q1,q2,q3);
 
 			//normalize the quaternian
-			double mag = sqrt(qx*qx+qy*qy+qz*qz+qw*qw);
-			qx = qx/mag;
-			qy = qy/mag;
-			qz = qz/mag;
-			qw = qw/mag;
-			ROS_INFO("Normalized Object orientation(x,y,z,w): (%f,%f,%f,%f)", qx,qy,qz,qw);
+			double mag = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+			q0 = q0/mag;
+			q1 = q1/mag;
+			q2 = q2/mag;
+			q3 = q3/mag;
+			ROS_INFO("Normalized Object orientation(x,y,z,w): (%f,%f,%f,%f)", q0,q1,q2,q3);
 
 		}
 		else
@@ -898,18 +906,13 @@ private:
 		collision_object.poses[shapes_size].position.x = x;
 		collision_object.poses[shapes_size].position.y = y;
 		collision_object.poses[shapes_size].position.z = z;//+(dimensions[2]/2.0);
-		collision_object.poses[shapes_size].orientation.x = qx;
-		collision_object.poses[shapes_size].orientation.y = qy;
-		collision_object.poses[shapes_size].orientation.z = qz;
-		collision_object.poses[shapes_size].orientation.w = qw;
+		collision_object.poses[shapes_size].orientation.x = q0;
+		collision_object.poses[shapes_size].orientation.y = q1;
+		collision_object.poses[shapes_size].orientation.z = q2;
+		collision_object.poses[shapes_size].orientation.w = q3;
 	
 		return true;
 	}
-
-
-	
-	
-	
 };
 
 #endif

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- start Gazebo -->
+	<include file="$(find cob_bringup)/ros/launch/sim.launch"/>
+
+	<!-- table-->
+	<include file="$(find cob_gazebo_worlds)/ros/launch/table.launch"/>
+
+	<!-- start navigation -->
+	<include file="$(find cob_2dnav)/ros/launch/2dnav_ipa.launch"/>
+
+	<!-- milk box -->
+	<include file="$(find cob_gazebo_worlds)/ros/launch/milk_box.launch"/>
+
+	<!-- start sensor fusion 
+	<include file="$(find cob_sensor_fusion)/ros/launch/sensor_fusion_stereo.launch"/>
+-->
+	<!-- start object detection 
+	<include file="$(find cob_object_detection)/ros/launch/object_recognition_stereo.launch"/>
+-->
+	<!-- start script server and upload default parameters -->
+	<include file="$(find cob_script_server)/launch/script_server.launch"/>
+
+	<node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" />
+	<!-- upload additional parameters -->
+	<rosparam command="load" ns="script_server/arm" file="$(find cob_script_server)/launch/additional_arm_configurations.yaml"/>
+	<rosparam command="load" ns="script_server/sdh" file="$(find cob_script_server)/launch/additional_sdh_configurations.yaml"/>
+	
+	<!-- start navigation -->
+	<include file="$(find cob_arm_navigation)/launch/arm_navigation_self_collision.launch"/>
+	
+	<!-- upload lbr voxelization -->
+	<include file="$(find cob_prmce_planner)/launch/upload_lbr_voxelization.launch"/>
+	
+	<!-- run the program now!-->
+	
+</launch>

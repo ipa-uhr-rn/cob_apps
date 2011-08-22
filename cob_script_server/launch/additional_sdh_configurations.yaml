@@ -1,0 +1,5 @@
+box_grasp: [[-0.53109702888123245, 0.75465351040646489, 0.0056463992999375989, -0.28984976875554658, 0.87776609818800111, -0.27585582085986005, 0.87041658750620154]]
+
+# needs to be [thumb_2_joint, thumb_3_joint, knuckle_joint, finger_12_joint, finger_13_joint, finger_22_joint, finger_23_joint]
+
+#rostopic echo gives: ['sdh_knuckle_joint', 'sdh_finger_12_joint', 'sdh_finger_13_joint', 'sdh_finger_22_joint', 'sdh_finger_23_joint', 'sdh_thumb_2_joint', 'sdh_thumb_3_joint']

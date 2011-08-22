@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- include object handler file -->
+	<node pkg="cob_arm_navigation" type="object_handler" name="object_handler" ns="object_handler" cwd="node" respawn="false" output="screen"/>
+
+
+</launch>
