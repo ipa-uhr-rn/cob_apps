@@ -204,7 +204,7 @@ private:
 		  return false;
 		}
 	
-		collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::ADD;
+		collision_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
 	
 		m_object_in_map_pub.publish(collision_object);
 
@@ -790,7 +790,7 @@ private:
 	}
 	
 
-	bool compose_box(std::string model_name, std::vector< double > dimensions, std::vector< double > &location, std::vector< double > &rotation, mapping_msgs::CollisionObject &collision_object, std::string name)
+	bool compose_box(std::string model_name, std::vector< double > dimensions, std::vector< double > &location, std::vector< double > &rotation, arm_navigation_msgs::CollisionObject &collision_object, std::string name)
 	{
 		
 		gazebo::GetModelState state_srv;
@@ -898,7 +898,7 @@ private:
 		//ToDo: figure out how *.model-size and *.urdf-extend are related
 
 		//*.model origin is located at center of box
-		collision_object.shapes[shapes_size].type = geometric_shapes_msgs::Shape::BOX;
+		collision_object.shapes[shapes_size].type = arm_navigation_msgs::Shape::BOX;
 		collision_object.shapes[shapes_size].dimensions.push_back(dimensions[0]);
 		collision_object.shapes[shapes_size].dimensions.push_back(dimensions[1]);
 		collision_object.shapes[shapes_size].dimensions.push_back(dimensions[2]);
