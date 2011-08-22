@@ -41,9 +41,9 @@
 
 #include <cob_arm_navigation/HandleObject.h>
 #include <gazebo/GetModelState.h>
-#include <mapping_msgs/CollisionObject.h>
-#include <mapping_msgs/AttachedCollisionObject.h>
-#include <planning_environment_msgs/GetCollisionObjects.h>
+#include <arm_navigation_msgs/CollisionObject.h>
+#include <arm_navigation_msgs/AttachedCollisionObject.h>
+#include <arm_navigation_msgs/GetCollisionObjects.h>
 
 
 
@@ -78,12 +78,12 @@ public:
 		ROS_INFO("...done!");
 		
 		
-		m_object_in_map_pub  = rh.advertise<mapping_msgs::CollisionObject>("collision_object", 1);
-		m_att_object_in_map_pub  = rh.advertise<mapping_msgs::AttachedCollisionObject>("attached_collision_object", 1);
+		m_object_in_map_pub  = rh.advertise<arm_navigation_msgs::CollisionObject>("collision_object", 1);
+		m_att_object_in_map_pub  = rh.advertise<arm_navigation_msgs::AttachedCollisionObject>("attached_collision_object", 1);
 
 		
 		m_state_client = rh.serviceClient<gazebo::GetModelState>("/gazebo/get_model_state");
-		m_collision_objects_client = rh.serviceClient<planning_environment_msgs::GetCollisionObjects>("/cob3_environment_server/get_collision_objects");
+		m_collision_objects_client = rh.serviceClient<arm_navigation_msgs::GetCollisionObjects>("/cob3_environment_server/get_collision_objects");
 
 		m_add_object_server = rh.advertiseService("/object_handler/add_object", &Object_Handler::add_object, this);
 		m_remove_object_server = rh.advertiseService("/object_handler/remove_object", &Object_Handler::remove_object, this);
@@ -125,7 +125,7 @@ private:
 			ROS_DEBUG("Parameter: %s", model_parameter.c_str());
 		}
 
-		mapping_msgs::CollisionObject collision_object;
+		arm_navigation_msgs::CollisionObject collision_object;
 
 		//find out the geom::type of the model
 		std::string pattern = "geom:box";
@@ -225,7 +225,7 @@ private:
 		
 		std::string object_name = req.object.data;
 		
-		planning_environment_msgs::GetCollisionObjects srv;
+		arm_navigation_msgs::GetCollisionObjects srv;
 		
 		srv.request.include_points = false;
 		
@@ -237,9 +237,9 @@ private:
 				if(srv.response.collision_objects[i].id == object_name)
 				{
 					ROS_INFO("%s found!", object_name.c_str());
-					mapping_msgs::CollisionObject collision_object = srv.response.collision_objects[i];
+					arm_navigation_msgs::CollisionObject collision_object = srv.response.collision_objects[i];
 					
-					collision_object.operation.operation = mapping_msgs::CollisionObjectOperation::REMOVE;
+					collision_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::REMOVE;
 					
 					m_object_in_map_pub.publish(collision_object);
 
@@ -282,7 +282,7 @@ private:
 		
 		std::string object_name = req.object.data;
 		
-		planning_environment_msgs::GetCollisionObjects srv;
+		arm_navigation_msgs::GetCollisionObjects srv;
 		
 		srv.request.include_points = false;
 		
@@ -295,7 +295,7 @@ private:
 				{
 					ROS_INFO("%s found!", object_name.c_str());
 					
-					mapping_msgs::AttachedCollisionObject att_object;
+					arm_navigation_msgs::AttachedCollisionObject att_object;
 					att_object.object = srv.response.collision_objects[i];
 					//attach it to the SDH
 					att_object.link_name = "sdh_palm_link";
@@ -310,7 +310,7 @@ private:
 					att_object.touch_links.push_back("sdh_thumb_2_link");
 					att_object.touch_links.push_back("sdh_thumb_3_link");
 					
-					att_object.object.operation.operation = mapping_msgs::CollisionObjectOperation::ATTACH_AND_REMOVE_AS_OBJECT;
+					att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ATTACH_AND_REMOVE_AS_OBJECT;
 					
 					m_att_object_in_map_pub.publish(att_object);
 
@@ -353,7 +353,7 @@ private:
 		
 		std::string object_name = req.object.data;
 		
-		planning_environment_msgs::GetCollisionObjects srv;
+		arm_navigation_msgs::GetCollisionObjects srv;
 		
 		srv.request.include_points = false;
 		
@@ -366,9 +366,9 @@ private:
 				{
 					ROS_INFO("%s found!", object_name.c_str());
 					
-					mapping_msgs::AttachedCollisionObject att_object = srv.response.attached_collision_objects[i];
+					arm_navigation_msgs::AttachedCollisionObject att_object = srv.response.attached_collision_objects[i];
 					
-					att_object.object.operation.operation = mapping_msgs::CollisionObjectOperation::DETACH_AND_ADD_AS_OBJECT;
+					att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::DETACH_AND_ADD_AS_OBJECT;
 					
 					m_att_object_in_map_pub.publish(att_object);
 
